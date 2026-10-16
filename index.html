@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="es">
 <head>
@@ -592,7 +591,7 @@ function renderCode(){
 
 /* ---------- voz ---------- */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-let rec=null,listening=false;
+let rec=null,listening=false,wantMic=false,micBase='';
 const NUM={cero:'0',uno:'1',una:'1',dos:'2',tres:'3',cuatro:'4',cinco:'5',seis:'6',siete:'7',ocho:'8',nueve:'9',guion:'-',punto:'.'};
 function voiceClean(s){
   const t=s.toLowerCase().split(/\s+/).map(w=>NUM[w]!==undefined?NUM[w]:w).join('');
@@ -601,21 +600,32 @@ function voiceClean(s){
 $('btnMic').onclick=()=>{
   audio();
   if(!SR){toast('Tu navegador no soporta reconocimiento de voz (usa Chrome)');return}
-  if(listening){rec&&rec.stop();return}
-  rec=new SR();rec.lang='es-EC';rec.continuous=true;rec.interimResults=true;
-  const base=val.value;let finalTxt='';
-  rec.onstart=()=>{listening=true;$('btnMic').classList.add('rec');setStatus('Escuchando…','busy');tone(1000,0,.1)};
+  if(listening||wantMic){wantMic=false;rec&&rec.stop();return}
+  wantMic=true;micBase=val.value;startRec();
+};
+// Modo frase por frase (continuous=false) y reinicio automático: evita los textos repetidos que
+// Chrome en Android genera con continuous=true.
+function startRec(){
+  rec=new SR();rec.lang='es-EC';rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=1;
+  let pending='',committed=false;
+  rec.onstart=()=>{if(!listening)tone(1000,0,.1);listening=true;$('btnMic').classList.add('rec');setStatus('Escuchando…','busy')};
   rec.onresult=e=>{
-    let interim='';
-    for(let i=e.resultIndex;i<e.results.length;i++){
-      const tr=e.results[i][0].transcript;
-      if(e.results[i].isFinal)finalTxt+=' '+tr;else interim+=' '+tr;
+    // solo el último resultado de esta frase (los anteriores ya vienen incluidos en él)
+    const res=e.results[e.results.length-1];
+    if(res){
+      const t=voiceClean(res[0].transcript);
+      pending=t;
+      if(res.isFinal){micBase=clean(micBase+t);pending='';committed=true}
     }
-    val.value=clean(base+voiceClean(finalTxt+' '+interim));
+    val.value=clean(micBase+pending);
     $('srcInfo').textContent='Fuente: Voz';$('kSrc').textContent='Voz';update();
   };
-  rec.onerror=e=>{if(e.error!=='no-speech')toast('Voz: '+e.error)};
-  rec.onend=()=>{listening=false;$('btnMic').classList.remove('rec');setStatus(stream?'Escaneando':'En espera',stream?'on':'');beepDone()};
+  rec.onerror=e=>{if(e.error==='no-speech'||e.error==='aborted')return;wantMic=false;toast('Voz: '+e.error)};
+  rec.onend=()=>{
+    if(pending&&!committed){micBase=clean(micBase+pending);val.value=micBase;update()}
+    if(wantMic){try{startRec();return}catch(err){wantMic=false}}
+    listening=false;$('btnMic').classList.remove('rec');setStatus(stream?'Escaneando':'En espera',stream?'on':'');beepDone();
+  };
   rec.start();
 };
 
