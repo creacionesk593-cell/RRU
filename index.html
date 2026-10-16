@@ -95,6 +95,9 @@ h1{font-size:20px;margin:0;letter-spacing:.2px}
 #shotOrig:not(.empty)::after{content:"";position:absolute;left:0;right:0;top:50%;height:2px;background:#ff1f3d;box-shadow:0 0 6px rgba(255,31,61,.8);transform:translateY(-1px);pointer-events:none}
 .zl{display:flex;justify-content:space-between;align-items:center}
 .zc{display:flex;gap:6px;align-items:center}
+.chk{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--mut);text-transform:none;letter-spacing:0;cursor:pointer;margin-right:4px}
+.chk input{accent-color:var(--violet);width:16px;height:16px}
+.hideshot{display:none!important}
 .zc b{font-size:12px;color:var(--txt);min-width:40px;text-align:center}
 .mini.sm{width:28px;height:28px;font-size:15px;border-radius:9px}
 .shot.empty{background:rgba(255,255,255,.04);color:var(--mut);font-size:13px;padding:18px;text-align:center}
@@ -184,9 +187,9 @@ input[type=file]{display:none}
     <section class="card">
       <h2><i></i>Resultado</h2>
       <div class="prev">
-        <div class="lbl">Parte leída (procesada)</div>
+        <div class="lbl zl"><span>Parte leída (procesada)</span><label class="chk"><input type="checkbox" id="showProc" checked> Mostrar</label></div>
         <div class="shot empty" id="shotProc">Aquí verás la imagen limpia que leyó el OCR</div>
-        <div class="lbl zl"><span>Franja leída (original)</span><span class="zc"><button class="mini sm" id="zMinus" title="Reducir">−</button><b id="zVal">100%</b><button class="mini sm" id="zPlus" title="Ampliar">+</button></span></div>
+        <div class="lbl zl"><span>Franja leída (original)</span><span class="zc"><label class="chk"><input type="checkbox" id="showOrig" checked> Mostrar</label><button class="mini sm" id="zMinus" title="Reducir">−</button><b id="zVal">100%</b><button class="mini sm" id="zPlus" title="Ampliar">+</button></span></div>
         <div class="shot empty" id="shotOrig">—</div>
       </div>
 
@@ -452,6 +455,7 @@ function parseStation(text){
 function showShot(id,canvas){
   const el=$(id);el.className='shot';el.innerHTML='';el.appendChild(canvas);
   if(id==='shotOrig')applyZoom();
+  applyShow();
 }
 let lastCrop=null;
 async function runOCR(){
@@ -671,6 +675,12 @@ $('rRange').oninput=e=>setFine(parseFloat(e.target.value));
 
 /* ---------- ajustes guardados ---------- */
 /* ---------- zoom de la franja original ---------- */
+function applyShow(){
+  const p=$('showProc').checked,o=$('showOrig').checked;
+  $('shotProc').classList.toggle('hideshot',!p);
+  $('shotOrig').classList.toggle('hideshot',!o);
+  ['zMinus','zVal','zPlus'].forEach(id=>$(id).style.display=o?'':'none');
+}
 const ZOOMS=[1,1.5,2,3,4];
 let zoomO=1;
 function applyZoom(){
@@ -686,7 +696,7 @@ $('zPlus').onclick=()=>stepZoom(1);
 $('zMinus').onclick=()=>stepZoom(-1);
 
 const CFG='scannerBaseCfg';
-function saveCfg(){try{localStorage.setItem(CFG,JSON.stringify({box,facing,upper:$('upper').checked,mode:sel.value,band:bandSel.value,asCode:asCode.checked,zoom:zoomO}))}catch(e){}}
+function saveCfg(){try{localStorage.setItem(CFG,JSON.stringify({box,facing,upper:$('upper').checked,mode:sel.value,band:bandSel.value,asCode:asCode.checked,zoom:zoomO,showProc:$('showProc').checked,showOrig:$('showOrig').checked}))}catch(e){}}
 function loadCfg(){
   try{
     const c=JSON.parse(localStorage.getItem(CFG)||'null');if(!c)return;
@@ -697,19 +707,22 @@ function loadCfg(){
     if(c.band)bandSel.value=c.band;
     asCode.checked=!!c.asCode;
     if(ZOOMS.includes(c.zoom))zoomO=c.zoom;
+    $('showProc').checked=c.showProc!==false;
+    $('showOrig').checked=c.showOrig!==false;
   }catch(e){}
 }
 function bindCfg(){
   [$('upper'),sel,bandSel,asCode].forEach(el=>el.addEventListener('change',saveCfg));
+  [$('showProc'),$('showOrig')].forEach(el=>el.addEventListener('change',()=>{applyShow();saveCfg()}));
   bandSel.addEventListener('change',updateBand);
 }
 
 /* ---------- varios ---------- */
 $('btnCopy').onclick=async()=>{try{await navigator.clipboard.writeText(val.value);toast('Copiado')}catch(e){val.select();document.execCommand('copy');toast('Copiado')}};
 $('btnClear').onclick=()=>{val.value='';$('kSrc').textContent='—';$('srcInfo').textContent='Escribe, dicta o escanea';
-  ['shotProc','shotOrig'].forEach((id,i)=>{const e=$(id);e.className='shot empty';e.textContent=i?'—':'Aquí verás la imagen limpia que leyó el OCR'});update()};
+  ['shotProc','shotOrig'].forEach((id,i)=>{const e=$(id);e.className='shot empty';applyShow();e.textContent=i?'—':'Aquí verás la imagen limpia que leyó el OCR'});update()};
 window.addEventListener('beforeunload',stopCam);
-loadCfg();applyBox();updateBand();applyZoom();update();bindCfg();
+loadCfg();applyBox();updateBand();applyZoom();applyShow();update();bindCfg();
 </script>
 </body>
 </html>
