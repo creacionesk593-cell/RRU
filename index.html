@@ -117,6 +117,11 @@ h1{font-size:20px;margin:0;letter-spacing:.2px}
 .icon{width:54px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.07);color:var(--txt);font-size:20px;cursor:pointer}
 .icon.rec{background:linear-gradient(135deg,#ff3b5c,#ff7a3b);border:none;animation:pulse 1s infinite}
 .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin:8px 4px 0}
+.meta{align-items:center;gap:8px}
+.meta #srcInfo{flex:1;min-width:0}
+.spk{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.07);color:var(--txt);height:28px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.spk:active{transform:scale(.96)}
+.spk.on{background:linear-gradient(135deg,var(--violet),var(--cyan));border-color:transparent}
 .opts{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mut);margin-top:10px}
 .opts input{accent-color:var(--violet);width:18px;height:18px}
 select{width:100%;margin-top:14px;padding:14px;border-radius:16px;border:1.5px solid var(--line);background:rgba(0,0,0,.35);color:var(--txt);font-size:16px;font-weight:600;outline:none;appearance:none;
@@ -199,7 +204,7 @@ input[type=file]{display:none}
         <label class="kwf"><span>Caracteres a llenar, contando de derecha a izquierda (0 = todos)</span>
           <input id="nChars" type="number" inputmode="numeric" min="0" max="200" value="25"></label>
       </div>
-      <p class="hint">Con la vista compacta solo ves el área de lectura: apunta la cámara para que la serie quede sobre la línea roja, justo entre las dos palabras clave. Desmarca «Vista compacta» si necesitas mover o redimensionar el recuadro en la cámara; en las fotos subidas el recuadro siempre se puede mover. Usa la zona OCR «franja ancha» para que entren las dos palabras. Endereza la imagen con ↶ ↷ (1°), el deslizador o ⟲ ⟳ (90°). Tus ajustes, las palabras clave y la cantidad se guardan solo en este dispositivo: cambiarlos aquí no afecta a otros teléfonos.</p>
+      <p class="hint">Con la vista compacta solo ves el área de lectura:</p>
     </section>
 
     <!-- RESULTADO -->
@@ -217,7 +222,7 @@ input[type=file]{display:none}
         <button class="icon" id="btnMic" title="Dictar por voz">🎤</button>
         <button class="icon" id="btnCopy" title="Copiar">📋</button>
       </div>
-      <div class="meta"><span id="srcInfo">Escribe, dicta o escanea</span><span id="lenInfo">0 / 25</span></div>
+      <div class="meta"><span id="srcInfo">Escribe, dicta o escanea</span><button type="button" class="spk" id="btnSpeak" title="Escuchar la serie letra por letra">🔊 Escuchar</button><span id="lenInfo">0 / 25</span></div>
       <label class="opts"><input type="checkbox" id="upper" checked> Forzar mayúsculas y solo letras/números</label>
 
       <select id="mode">
@@ -685,6 +690,28 @@ function startRec(){
     listening=false;$('btnMic').classList.remove('rec');setStatus(stream?'Escaneando':'En espera',stream?'on':'');beepDone();
   };
   rec.start();
+};
+
+/* ---------- escuchar la serie (voz del dispositivo) ---------- */
+const TTS=window.speechSynthesis;
+const SPEAK={'-':'guion','_':'guion bajo','.':'punto','/':'diagonal'};
+function pickVoice(){
+  const vs=TTS?TTS.getVoices():[];
+  return vs.find(v=>/^es[-_](MX|US|419|EC|CO|AR)/i.test(v.lang))||vs.find(v=>/^es/i.test(v.lang))||null;
+}
+function setSpeakUI(on){$('btnSpeak').classList.toggle('on',on);$('btnSpeak').textContent=on?'⏹ Detener':'🔊 Escuchar'}
+$('btnSpeak').onclick=()=>{
+  if(!TTS||!window.SpeechSynthesisUtterance){toast('Tu navegador no puede reproducir voz');return}
+  if(TTS.speaking){TTS.cancel();setSpeakUI(false);return}
+  const t=val.value.replace(/\s+/g,'');
+  if(!t){toast('No hay serie para reproducir');return}
+  // letra por letra y con pausas, para compararlo con la imagen leída
+  const u=new SpeechSynthesisUtterance(t.split('').map(c=>SPEAK[c]||c).join(', '));
+  const v=pickVoice();if(v){u.voice=v;u.lang=v.lang}else u.lang='es-ES';
+  u.rate=.85;
+  u.onstart=()=>setSpeakUI(true);
+  u.onend=u.onerror=()=>setSpeakUI(false);
+  TTS.speak(u);
 };
 
 /* ---------- giro, vista y franja ---------- */
