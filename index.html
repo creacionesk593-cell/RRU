@@ -54,7 +54,9 @@ h1{font-size:20px;margin:0;letter-spacing:.2px}
 /* escenario */
 .stage{position:relative;width:100%;aspect-ratio:4/3;border-radius:18px;overflow:hidden;background:#05070f;border:1px solid var(--line)}
 .stage video{position:absolute;width:2px;height:2px;opacity:0;pointer-events:none}
-.stage #view{position:absolute;inset:0;width:100%;height:100%;display:none}
+.stage #view{position:absolute;left:0;top:0;width:100%;height:100%;display:none}
+.stage.compact{aspect-ratio:16/6}
+.stage.compact .hd,.stage.compact .crop .tag{display:none!important}
 .band{position:absolute;left:0;right:0;background:rgba(255,31,61,.12);border-top:1px solid rgba(255,31,61,.55);border-bottom:1px solid rgba(255,31,61,.55);pointer-events:none}
 .rot{display:flex;align-items:center;gap:6px;margin-top:10px}
 .rot input[type=range]{flex:1;min-width:0;accent-color:var(--cyan)}
@@ -63,6 +65,13 @@ h1{font-size:20px;margin:0;letter-spacing:.2px}
 .rot span{font-size:12px;color:var(--mut);width:46px;text-align:right;flex:none}
 .cfg{margin-top:12px}
 .cfg select{margin-top:10px}
+.kw{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.kw .lbl{margin:0 2px 2px}
+.kwf{display:block;margin-top:10px}
+.kwf span{display:block;font-size:11px;color:var(--mut);margin:0 2px 5px}
+.kwf input{width:100%;font:600 16px ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;letter-spacing:.8px;padding:12px 14px;border-radius:14px;border:1.5px solid var(--line);background:rgba(0,0,0,.35);color:var(--txt);outline:none}
+.kwf input:focus{border-color:var(--cyan);box-shadow:0 0 0 4px rgba(34,211,238,.18)}
+.kwf input[type=number]{text-transform:none;max-width:140px}
 .stage .placeholder{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--mut);font-size:14px;padding:20px}
 .crop{position:absolute;border:2px dashed var(--cyan);border-radius:8px;box-shadow:0 0 0 9999px rgba(5,7,15,.55);touch-action:none;cursor:move;display:none}
 .crop .rl{position:absolute;left:0;right:0;top:50%;height:2px;background:#ff1f3d;box-shadow:0 0 10px 2px rgba(255,31,61,.8);transform:translateY(-1px);pointer-events:none}
@@ -172,15 +181,25 @@ input[type=file]{display:none}
         <input type="file" id="file" accept="image/*">
       </div>
       <div class="cfg">
+        <label class="opts"><input type="checkbox" id="compact" checked> Vista compacta (cámara): mostrar solo el área de lectura</label>
         <label class="opts"><input type="checkbox" id="asCode"> La foto es código de barras / QR (si no lo detecta, lee con OCR el texto bajo las barras)</label>
         <select id="bandSel" title="Zona que se lee con OCR">
           <option value="0.25">Zona OCR: franja angosta de la línea roja</option>
-          <option value="0.4" selected>Zona OCR: franja media de la línea roja</option>
-          <option value="0.6">Zona OCR: franja ancha de la línea roja</option>
+          <option value="0.4">Zona OCR: franja media de la línea roja</option>
+          <option value="0.6" selected>Zona OCR: franja ancha de la línea roja</option>
           <option value="1">Zona OCR: todo el recuadro</option>
         </select>
       </div>
-      <p class="hint">La línea roja marca el centro del recuadro. El OCR y la vista previa usan solo la franja resaltada alrededor de la línea (si <b>ESTACIÓN BASE</b> y el código quedan en dos renglones, usa franja ancha). Endereza la imagen con ↶ ↷ (1°), el deslizador o ⟲ ⟳ (90°). Tus ajustes se guardan solos.</p>
+      <div class="cfg kw">
+        <div class="lbl">Palabras clave y cantidad · solo en este dispositivo</div>
+        <label class="kwf"><span>Palabra clave de arriba</span>
+          <input id="kw1" type="text" value="ESTACION BASE" placeholder="ESTACION BASE" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
+        <label class="kwf"><span>Palabra clave de abajo</span>
+          <input id="kw2" type="text" value="CATEGORIA-EQUIPO" placeholder="CATEGORIA-EQUIPO" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>
+        <label class="kwf"><span>Caracteres a llenar, contando de derecha a izquierda (0 = todos)</span>
+          <input id="nChars" type="number" inputmode="numeric" min="0" max="200" value="25"></label>
+      </div>
+      <p class="hint">Con la vista compacta solo ves el área de lectura: apunta la cámara para que la serie quede sobre la línea roja, justo entre las dos palabras clave. Desmarca «Vista compacta» si necesitas mover o redimensionar el recuadro en la cámara; en las fotos subidas el recuadro siempre se puede mover. Usa la zona OCR «franja ancha» para que entren las dos palabras. Endereza la imagen con ↶ ↷ (1°), el deslizador o ⟲ ⟳ (90°). Tus ajustes, las palabras clave y la cantidad se guardan solo en este dispositivo: cambiarlos aquí no afecta a otros teléfonos.</p>
     </section>
 
     <!-- RESULTADO -->
@@ -198,7 +217,7 @@ input[type=file]{display:none}
         <button class="icon" id="btnMic" title="Dictar por voz">🎤</button>
         <button class="icon" id="btnCopy" title="Copiar">📋</button>
       </div>
-      <div class="meta"><span id="srcInfo">Escribe, dicta o escanea</span><span id="lenInfo">0 / 30</span></div>
+      <div class="meta"><span id="srcInfo">Escribe, dicta o escanea</span><span id="lenInfo">0 / 25</span></div>
       <label class="opts"><input type="checkbox" id="upper" checked> Forzar mayúsculas y solo letras/números</label>
 
       <select id="mode">
@@ -220,10 +239,11 @@ const $=id=>document.getElementById(id);
 const stage=$('stage'),video=$('video'),view=$('view'),cropEl=$('crop'),ph=$('ph');
 const still=new Image();
 const val=$('val'),sel=$('mode'),codeBox=$('code');
+const kw1=$('kw1'),kw2=$('kw2'),nIn=$('nChars'),compactEl=$('compact');
 let mode='none';            // none | video | image
 let stream=null,facing='environment',scanning=false,busy=false,count=0,lastCode='',lastAt=0;
 let workerP=null;
-const box={x:.08,y:.36,w:.84,h:.28};
+const box={x:.06,y:.4,w:.88,h:.2};
 
 /* ---------- utilidades ---------- */
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
@@ -237,12 +257,26 @@ const beepDone=()=>{tone(880,0,.12);tone(1320,.13,.12);tone(1760,.26,.2);navigat
 const beepErr=()=>{tone(220,0,.25,'sawtooth',.18)};
 
 /* ---------- recuadro de corte ---------- */
+// Vista compacta: solo en cámara en vivo (las fotos subidas se ven completas para poder mover el recuadro)
+function compactOn(){return compactEl.checked&&mode!=='image'}
+// zona de la imagen que se muestra en vista compacta: el recuadro más un pequeño margen
+function region(){
+  const px=box.w*.04,py=box.h*.14;
+  const x0=Math.max(0,box.x-px),y0=Math.max(0,box.y-py),x1=Math.min(1,box.x+box.w+px),y1=Math.min(1,box.y+box.h+py);
+  return{x:x0,y:y0,w:x1-x0,h:y1-y0};
+}
 function applyBox(){
-  cropEl.style.left=box.x*100+'%';cropEl.style.top=box.y*100+'%';
-  cropEl.style.width=box.w*100+'%';cropEl.style.height=box.h*100+'%';
+  const c=compactOn(),r=c?region():{x:0,y:0,w:1,h:1};
+  cropEl.style.left=(box.x-r.x)/r.w*100+'%';cropEl.style.top=(box.y-r.y)/r.h*100+'%';
+  cropEl.style.width=box.w/r.w*100+'%';cropEl.style.height=box.h/r.h*100+'%';
+  view.style.width=100/r.w+'%';view.style.height=100/r.h+'%';
+  view.style.left=(-r.x/r.w*100)+'%';view.style.top=(-r.y/r.h*100)+'%';
+  cropEl.style.cursor=c?'default':'move';
+  stage.classList.toggle('compact',c);
+  applyAspect();
 }
 let drag=null;
-cropEl.addEventListener('pointerdown',e=>{drag={m:e.target.dataset.h||'move',sx:e.clientX,sy:e.clientY,b:{...box}};cropEl.setPointerCapture(e.pointerId);e.preventDefault()});
+cropEl.addEventListener('pointerdown',e=>{if(compactOn())return;drag={m:e.target.dataset.h||'move',sx:e.clientX,sy:e.clientY,b:{...box}};cropEl.setPointerCapture(e.pointerId);e.preventDefault()});
 cropEl.addEventListener('pointermove',e=>{
   if(!drag)return;
   const r=stage.getBoundingClientRect(),dx=(e.clientX-drag.sx)/r.width,dy=(e.clientY-drag.sy)/r.height;
@@ -430,27 +464,40 @@ function preloadOCR(){
     if(m.status==='recognizing text'){const p=Math.round(m.progress*100);$('progBar').style.width=p+'%';setStatus('OCR '+p+'%','busy')}
   }}).then(async w=>{await w.setParameters({tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'});return w}).catch(e=>{workerP=null;throw e});
 }
-const norm=s=>s.toUpperCase().replace(/[^A-Z0-9]/g,'');
+const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/[^A-Z0-9]/g,'');
 function lev(a,b){
   const m=a.length,n=b.length,d=Array.from({length:m+1},(_,i)=>[i,...Array(n).fill(0)]);
   for(let j=1;j<=n;j++)d[0][j]=j;
   for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));
   return d[m][n];
 }
+// coincidencia tolerante de una línea del OCR con una palabra clave
+function kwMatch(line,kw){
+  const n=norm(line),k=norm(kw);
+  if(!k||n.length<2)return false;
+  if(k.length>=5&&n.includes(k))return true;
+  if(n.length>k.length*1.6+2||n.length<k.length*.6)return false;
+  return lev(n,k)<=Math.max(1,Math.floor(k.length*.3));
+}
+// La serie es lo que está entre la palabra clave de arriba y la de abajo
 function parseStation(text){
   const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-  const T='ESTACIONBASE';
-  let idx=lines.findIndex(l=>{const n=norm(l);return n.length>=8&&n.length<=18&&lev(n,T)<=4});
-  if(idx>=0){
-    for(let i=idx+1;i<lines.length;i++){
-      const c=lines[i].replace(/[^A-Za-z0-9]/g,'');
-      if(c.length>=1)return{code:c.slice(0,30),found:true};
-    }
+  const alnum=l=>l.replace(/[^A-Za-z0-9]/g,'');
+  const i1=norm(kw1.value)?lines.findIndex(l=>kwMatch(l,kw1.value)):-1;
+  let i2=-1;
+  if(norm(kw2.value)){
+    for(let i=(i1>=0?i1+1:0);i<lines.length;i++){if(kwMatch(lines[i],kw2.value)){i2=i;break}}
   }
-  // sin encabezado: la línea alfanumérica más larga
+  let mid=[],found='none';
+  if(i1>=0&&i2>i1){mid=lines.slice(i1+1,i2);found='both'}
+  else if(i1>=0){mid=lines.slice(i1+1,i1+2);found='one'}
+  else if(i2>0){mid=lines.slice(i2-1,i2);found='one'}
+  const code=mid.map(alnum).join('');
+  if(code)return{code,found};
+  // sin palabras clave a la vista: la línea alfanumérica más larga que no sea una palabra clave
   let best='';
-  for(const l of lines){const c=l.replace(/[^A-Za-z0-9]/g,'');if(c.length>best.length)best=c}
-  return{code:best.slice(0,30),found:false};
+  for(const l of lines){if(kwMatch(l,kw1.value)||kwMatch(l,kw2.value))continue;const c=alnum(l);if(c.length>best.length)best=c}
+  return{code:best,found:'none'};
 }
 function showShot(id,canvas){
   const el=$(id);el.className='shot';el.innerHTML='';el.appendChild(canvas);
@@ -496,7 +543,9 @@ async function runOCR(){
       sel.value='barra';
       setValue(r.code,'OCR',true);
       beepDone();
-      toast(r.found?'✔ ESTACIÓN BASE: '+r.code:'Se leyó texto, pero no se vio «ESTACIÓN BASE». Revisa.',3200);
+      toast(r.found==='both'?'✔ Serie entre las dos palabras clave: '+r.code
+        :r.found==='one'?'Se vio solo una palabra clave; revisa la serie: '+r.code
+        :'No se vieron las palabras clave; revisa la lectura.',3400);
     }else{
       const b=await detectCode(crop,true);
       if(b){acceptCode(b,'Foto')}
@@ -530,7 +579,7 @@ async function ocrUnderBars(crop,clean,worker){
   // pasada 1: todo el recuadro ya limpiado
   let {data}=await worker.recognize(clean);
   let l=lowestLine(data);
-  if(l)return{code:l.text.replace(/[^A-Za-z0-9]/g,'').slice(0,30),preview:markLine(clean,l.bbox)};
+  if(l)return{code:l.text.replace(/[^A-Za-z0-9]/g,''),preview:markLine(clean,l.bbox)};
   // pasada 2: solo la franja inferior, restringida a letras y números
   const sh=Math.round(crop.height*.45);
   const strip=document.createElement('canvas');strip.width=crop.width;strip.height=sh;
@@ -541,7 +590,7 @@ async function ocrUnderBars(crop,clean,worker){
     ({data}=await worker.recognize(clean2));
   }finally{await worker.setParameters({tessedit_char_whitelist:''})}
   l=lowestLine(data);
-  if(l)return{code:l.text.replace(/[^A-Za-z0-9]/g,'').slice(0,30),preview:markLine(clean2,l.bbox)};
+  if(l)return{code:l.text.replace(/[^A-Za-z0-9]/g,''),preview:markLine(clean2,l.bbox)};
   return null;
 }
 $('btnShot').onclick=runOCR;
@@ -549,16 +598,21 @@ $('btnRepeat').onclick=runOCR;
 
 /* ---------- campo editable + generación en vivo ---------- */
 function clean(v){return $('upper').checked?v.toUpperCase().replace(/[^A-Z0-9]/g,''):v}
+// cantidad de caracteres de este dispositivo (0 = sin límite; vacío = 25)
+function nChars(){const v=parseInt(nIn.value,10);return Number.isFinite(v)?clamp(v,0,200):25}
+// se queda con los últimos N caracteres (contando de derecha a izquierda)
+function tail(s){const n=nChars();return n>0&&s.length>n?s.slice(-n):s}
 function setValue(v,src,count_=false){
-  val.value=clean(v);
+  val.value=tail(clean(v));
   $('srcInfo').textContent='Fuente: '+src;$('kSrc').textContent=src;
   if(count_){count++;$('kCount').textContent=count}
   update();
 }
 function update(){
   const n=val.value.length;
-  $('lenInfo').textContent=n+' / 30';$('kLen').textContent=n;
-  $('lenInfo').style.color=n>30?'var(--pink)':'';
+  const mx=nChars();
+  $('lenInfo').textContent=n+' / '+(mx>0?mx:'∞');$('kLen').textContent=n;
+  $('lenInfo').style.color=mx>0&&n>mx?'var(--pink)':'';
   renderCode();
 }
 val.addEventListener('input',()=>{
@@ -619,14 +673,14 @@ function startRec(){
     if(res){
       const t=voiceClean(res[0].transcript);
       pending=t;
-      if(res.isFinal){micBase=clean(micBase+t);pending='';committed=true}
+      if(res.isFinal){micBase=tail(clean(micBase+t));pending='';committed=true}
     }
-    val.value=clean(micBase+pending);
+    val.value=tail(clean(micBase+pending));
     $('srcInfo').textContent='Fuente: Voz';$('kSrc').textContent='Voz';update();
   };
   rec.onerror=e=>{if(e.error==='no-speech'||e.error==='aborted')return;wantMic=false;toast('Voz: '+e.error)};
   rec.onend=()=>{
-    if(pending&&!committed){micBase=clean(micBase+pending);val.value=micBase;update()}
+    if(pending&&!committed){micBase=tail(clean(micBase+pending));val.value=micBase;update()}
     if(wantMic){try{startRec();return}catch(err){wantMic=false}}
     listening=false;$('btnMic').classList.remove('rec');setStatus(stream?'Escaneando':'En espera',stream?'on':'');beepDone();
   };
@@ -641,7 +695,11 @@ function updateBand(){const f=bandFrac(),b=$('band');b.style.top=(50-f*50)+'%';b
 function updateRotUI(){$('rRange').value=fine;$('rVal').textContent=(fine>0?'+':'')+fine+'°'}
 function resetRot(){quarter=0;fine=0;updateRotUI()}
 function rotDims(){const s=srcInfo();if(!s||!s.w)return null;return quarter%2?{w:s.h,h:s.w}:{w:s.w,h:s.h}}
-function applyAspect(){const d=rotDims();if(d)stage.style.aspectRatio=d.w+'/'+d.h}
+function applyAspect(){
+  const d=rotDims();if(!d)return;
+  if(compactOn()){const r=region();stage.style.aspectRatio=(r.w*d.w)+'/'+(r.h*d.h)}
+  else stage.style.aspectRatio=d.w+'/'+d.h;
+}
 function renderRot(canvas,scale,fill){
   const s=srcInfo(),d=rotDims();
   canvas.width=Math.max(1,Math.round(d.w*scale));canvas.height=Math.max(1,Math.round(d.h*scale));
@@ -652,7 +710,7 @@ function renderRot(canvas,scale,fill){
 }
 function renderView(){
   const d=rotDims();if(!d)return;
-  const cap=mode==='video'?1280:1600;
+  const cap=mode==='video'?(compactOn()?1600:1280):1600;
   renderRot(view,Math.min(1,cap/Math.max(d.w,d.h)),'#05070f');
 }
 function fullRotated(){
@@ -696,11 +754,11 @@ $('zPlus').onclick=()=>stepZoom(1);
 $('zMinus').onclick=()=>stepZoom(-1);
 
 const CFG='scannerBaseCfg';
-function saveCfg(){try{localStorage.setItem(CFG,JSON.stringify({box,facing,upper:$('upper').checked,mode:sel.value,band:bandSel.value,asCode:asCode.checked,zoom:zoomO,showProc:$('showProc').checked,showOrig:$('showOrig').checked}))}catch(e){}}
+function saveCfg(){try{localStorage.setItem(CFG,JSON.stringify({box,facing,upper:$('upper').checked,mode:sel.value,band:bandSel.value,asCode:asCode.checked,zoom:zoomO,showProc:$('showProc').checked,showOrig:$('showOrig').checked,kw1:kw1.value,kw2:kw2.value,nchars:nIn.value,compact:compactEl.checked,cfgv:2}))}catch(e){}}
 function loadCfg(){
   try{
     const c=JSON.parse(localStorage.getItem(CFG)||'null');if(!c)return;
-    if(c.box)Object.assign(box,c.box);
+    if(c.box&&c.cfgv===2)Object.assign(box,c.box);   // recuadros guardados antes de la vista compacta se descartan
     if(c.facing)facing=c.facing;
     $('upper').checked=c.upper!==false;
     if(c.mode)sel.value=c.mode;
@@ -709,11 +767,17 @@ function loadCfg(){
     if(ZOOMS.includes(c.zoom))zoomO=c.zoom;
     $('showProc').checked=c.showProc!==false;
     $('showOrig').checked=c.showOrig!==false;
+    compactEl.checked=c.compact!==false;
+    if(typeof c.kw1==='string')kw1.value=c.kw1;
+    if(typeof c.kw2==='string')kw2.value=c.kw2;
+    if(c.nchars!==undefined&&c.nchars!==null)nIn.value=c.nchars;
   }catch(e){}
 }
 function bindCfg(){
   [$('upper'),sel,bandSel,asCode].forEach(el=>el.addEventListener('change',saveCfg));
   [$('showProc'),$('showOrig')].forEach(el=>el.addEventListener('change',()=>{applyShow();saveCfg()}));
+  [kw1,kw2,nIn].forEach(el=>el.addEventListener('input',()=>{saveCfg();update()}));
+  compactEl.addEventListener('change',()=>{applyBox();saveCfg()});
   bandSel.addEventListener('change',updateBand);
 }
 
